@@ -54,6 +54,7 @@ public class LlmTranslatorApplication {
     private static final String TEXT_OPT_NAME = "text";
     private static final String PROMPT_FILE_OPT_NAME = "prompt-file";
     private static final String PO_FILE_OPT_NAME = "po-file";
+    private static final String MODEL_OPT_NAME = "model";
 
     public static void main(String[] args) throws IOException {
         Options options = new Options();
@@ -61,7 +62,7 @@ public class LlmTranslatorApplication {
         options.addOption(null, PROMPT_FILE_OPT_NAME, true, "Provide prompt from file");
         options.addOption(null, TEXT_OPT_NAME, true, "Provide text needed to be translated");
         options.addOption("f", PO_FILE_OPT_NAME, true, "Source PO file");
-        options.addOption("m", "model", true, "Provide model name");
+        options.addOption("m", MODEL_OPT_NAME, true, "Provide model name");
         options.addOption(null, LLM_SERVICE_URL_OPT_NAME, true, "Provide LLM Service endpoint");
 
         CommandLineParser commandLineParser = new DefaultParser();
@@ -78,7 +79,9 @@ public class LlmTranslatorApplication {
 
         // 基本对象
         String promptFile = commandLine.getOptionValue(PROMPT_FILE_OPT_NAME);
-        SystemPrompt systemPrompt = SystemPrompt.loadFromFile(promptFile);
+        SystemPrompt systemPrompt = commandLine.hasOption(PROMPT_FILE_OPT_NAME)
+                ?SystemPrompt.loadFromFile(promptFile)
+                :new SystemPrompt();
         System.out.println("System prompt: " + systemPrompt.getPromptString());
 
         String llmServiceEndpoint = commandLine.getOptionValue(LLM_SERVICE_URL_OPT_NAME, DEFAULT_LLM_SERVICE_ENDPOINT);
@@ -86,18 +89,19 @@ public class LlmTranslatorApplication {
                 llmServiceEndpoint, new HttpHeaders(), new RestTemplate());
         System.out.println("LLM service endpoint: " + llmServiceEndpoint);
 
-        String model = commandLine.hasOption("model")? commandLine.getOptionValue("model"):DEFAULT_MODEL;
+        String model = commandLine.getOptionValue(MODEL_OPT_NAME, DEFAULT_MODEL);
         System.out.println("Model: " + model);
 
         String userPromptFormat = DEFAULT_USER_PROMPT_FORMAT;
         OllamaTranslator translator = new OllamaTranslator(genericChatClient, model, systemPrompt.getPromptString(), userPromptFormat);
-
 
         // 不同用法
         if (commandLine.hasOption(TEXT_OPT_NAME)) {
             translateTextNow(commandLine, translator);
         } else if (commandLine.hasOption(PO_FILE_OPT_NAME)) {
             translatePoFile(commandLine, translator);
+        } else {
+            printUsage(options);
         }
     }
 
@@ -135,6 +139,10 @@ public class LlmTranslatorApplication {
         private static final String DEFAULT_SYSTEM_PROMPT = "你是一个翻译官";
 
         private String promptString = null;
+
+        public SystemPrompt() {
+            this(DEFAULT_SYSTEM_PROMPT);
+        }
 
         public SystemPrompt(String promptString) {
             this.promptString = promptString;
