@@ -55,6 +55,7 @@ public class LlmTranslatorApplication {
     private static final String PROMPT_FILE_OPT_NAME = "prompt-file";
     private static final String PO_FILE_OPT_NAME = "po-file";
     private static final String MODEL_OPT_NAME = "model";
+    private static final String LLM_SERVICE_HTTP_HEADER_OPT_NAME = "llm-service-http-header";
 
     public static void main(String[] args) throws IOException {
         Options options = new Options();
@@ -64,6 +65,7 @@ public class LlmTranslatorApplication {
         options.addOption("f", PO_FILE_OPT_NAME, true, "Source PO file");
         options.addOption("m", MODEL_OPT_NAME, true, "Provide model name");
         options.addOption(null, LLM_SERVICE_URL_OPT_NAME, true, "Provide LLM Service endpoint");
+        options.addOption(null, LLM_SERVICE_HTTP_HEADER_OPT_NAME, true, "Provide HTTP header for LLM Service");
 
         CommandLineParser commandLineParser = new DefaultParser();
         CommandLine commandLine;
@@ -84,9 +86,19 @@ public class LlmTranslatorApplication {
                 :new SystemPrompt();
         System.out.println("System prompt: " + systemPrompt.getPromptString());
 
+        HttpHeaders httpHeaders = new HttpHeaders();
+        if (commandLine.hasOption(LLM_SERVICE_HTTP_HEADER_OPT_NAME)) {
+            String[] httpHeaderLines = commandLine.getOptionValues(LLM_SERVICE_HTTP_HEADER_OPT_NAME);
+            for (String line : httpHeaderLines) {
+                System.out.println("Http header: " + line);
+                String[] a = line.split(":");
+                httpHeaders.add(a[0], a[1]);
+            }
+        }
+
         String llmServiceEndpoint = commandLine.getOptionValue(LLM_SERVICE_URL_OPT_NAME, DEFAULT_LLM_SERVICE_ENDPOINT);
         GenericChatClient genericChatClient = new GenericChatClient(HttpMethod.POST,
-                llmServiceEndpoint, new HttpHeaders(), new RestTemplate());
+                llmServiceEndpoint, httpHeaders, new RestTemplate());
         System.out.println("LLM service endpoint: " + llmServiceEndpoint);
 
         String model = commandLine.getOptionValue(MODEL_OPT_NAME, DEFAULT_MODEL);
