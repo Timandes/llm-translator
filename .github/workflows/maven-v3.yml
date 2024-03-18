@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven (V2)
+name: Java CI with Maven (V3)
 
 on:
   release:
@@ -24,14 +24,25 @@ jobs:
     - run: mkdir staging && cp target/*.jar staging
     - uses: actions/upload-artifact@v4
       with:
-        name: Package
+        name: llm-translator.bin.zip
         path: staging
+    - id: get-version
+      name: Get version
+      uses: jannemattila/get-version-from-tag@v3
+    - name: Get Current Release
+      id: get-current-release
+      uses: joutvhu/get-release@v1
+      with:
+          debug: true
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: "https://uploads.github.com/repos/Timandes/llm-translator/releases/1/assets{?name,label}"
-        asset_path: staging/llm-translator-1.0-SNAPSHOT.jar
-        asset_name: llm-translator-1.0-SNAPSHOT.jar
+        upload_url: ${{ steps.get-current-release.outputs.upload_url }}
+        asset_path: staging/llm-translator-${{ steps.get-version.outputs.version }}-jar-with-dependencies.jar
+        asset_name: llm-translator-${{ steps.get-version.outputs.version }}-jar-with-dependencies.jar
+        asset_content_type: application/java-archive
