@@ -17,9 +17,9 @@
 package cn.timandes.translator;
 
 import cn.timandes.Translator;
-import cn.timandes.chat.GenericChatClient;
+import cn.timandes.chat.ChatClient;
+import cn.timandes.chat.ChatResponse;
 import cn.timandes.chat.GenericChatRequest;
-import cn.timandes.chat.GenericChatResponse;
 import com.azure.ai.openai.models.ChatMessage;
 import com.azure.ai.openai.models.ChatRole;
 
@@ -27,13 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OllamaTranslator implements Translator {
-    private GenericChatClient genericChatClient;
+    private ChatClient chatClient;
     private String model;
     private String systemPrompt;
     private String userPromptFormat;
 
-    public OllamaTranslator(GenericChatClient genericChatClient, String model, String systemPrompt, String userPromptFormat) {
-        this.genericChatClient = genericChatClient;
+    public OllamaTranslator(ChatClient chatClient, String model, String systemPrompt, String userPromptFormat) {
+        this.chatClient = chatClient;
         this.model = model;
         this.systemPrompt = systemPrompt;
         this.userPromptFormat = userPromptFormat;
@@ -50,8 +50,8 @@ public class OllamaTranslator implements Translator {
         request.setModel(model);
         request.setStream(false);
 
-        GenericChatResponse response = genericChatClient.chat(request);
-        return response.getMessage().getContent();
+        ChatResponse response = chatClient.chat(request);
+        return response.getChoices().get(0).getMessage().getContent();
     }
 
     private String buildUserPrompt(String s) {

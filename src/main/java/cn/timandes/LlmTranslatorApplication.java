@@ -16,7 +16,8 @@
 
 package cn.timandes;
 
-import cn.timandes.chat.GenericChatClient;
+import cn.timandes.chat.ChatClient;
+import cn.timandes.chat.OllamaChatClient;
 import cn.timandes.text.PoMessageTextReader;
 import cn.timandes.text.PoMessageTextWriter;
 import cn.timandes.text.TextReader;
@@ -32,6 +33,7 @@ import org.fedorahosted.tennera.jgettext.Message;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.Closeable;
@@ -58,6 +60,11 @@ public class LlmTranslatorApplication {
     private static final String LLM_SERVICE_HTTP_HEADER_OPT_NAME = "llm-service-http-header";
 
     public static void main(String[] args) throws IOException {
+        LlmTranslatorApplication application = new LlmTranslatorApplication();
+        application.run(args);
+    }
+
+    public void run(String[] args) throws IOException {
         Options options = new Options();
 
         options.addOption(null, PROMPT_FILE_OPT_NAME, true, "Provide prompt from file");
@@ -97,15 +104,14 @@ public class LlmTranslatorApplication {
         }
 
         String llmServiceEndpoint = commandLine.getOptionValue(LLM_SERVICE_URL_OPT_NAME, DEFAULT_LLM_SERVICE_ENDPOINT);
-        GenericChatClient genericChatClient = new GenericChatClient(HttpMethod.POST,
-                llmServiceEndpoint, httpHeaders, new RestTemplate());
+        ChatClient chatClient = buildChatClient(HttpMethod.POST, llmServiceEndpoint, httpHeaders, new RestTemplate());
         System.out.println("LLM service endpoint: " + llmServiceEndpoint);
 
         String model = commandLine.getOptionValue(MODEL_OPT_NAME, DEFAULT_MODEL);
         System.out.println("Model: " + model);
 
         String userPromptFormat = DEFAULT_USER_PROMPT_FORMAT;
-        OllamaTranslator translator = new OllamaTranslator(genericChatClient, model, systemPrompt.getPromptString(), userPromptFormat);
+        OllamaTranslator translator = new OllamaTranslator(chatClient, model, systemPrompt.getPromptString(), userPromptFormat);
 
         // 不同用法
         if (commandLine.hasOption(TEXT_OPT_NAME)) {
@@ -115,6 +121,10 @@ public class LlmTranslatorApplication {
         } else {
             printUsage(options);
         }
+    }
+
+    protected ChatClient buildChatClient(HttpMethod httpMethod, String url, HttpHeaders httpHeaders, RestOperations restOperations) {
+        return new OllamaChatClient(httpMethod, url, httpHeaders, restOperations);
     }
 
     private static void translateTextNow(CommandLine commandLine, OllamaTranslator translator) {
