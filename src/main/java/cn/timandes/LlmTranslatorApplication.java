@@ -190,17 +190,22 @@ public class LlmTranslatorApplication {
 
         private cn.timandes.Translator translator;
 
+        private TranslationCacheManager translationCacheManager;
+
         TranslatePipeline(String cacheFilePath, cn.timandes.Translator translator, TextReader<Message> textReader, TextWriter<Message> textWriter) {
             this.translator = translator;
             this.textReader = textReader;
             this.textWriter = textWriter;
 
-            filterList.add(new TranslationCacheTranslatorFilter(new TranslationCacheManager(cacheFilePath)));
+            translationCacheManager = new TranslationCacheManager(cacheFilePath);
+            filterList.add(new TranslationCacheTranslatorFilter(translationCacheManager));
             filterList.add(new RemoveBackQuotesTranslatorFilter());
             filterList.add(new ReturnCharTranslatorFilter());
         }
 
         public void go() throws IOException{
+            translationCacheManager.tryToLoad();
+
             textReader.read(this::translateText);
             if (textWriter instanceof Closeable) {
                 ((Closeable) textWriter).close();
@@ -208,6 +213,8 @@ public class LlmTranslatorApplication {
         }
 
         private void translateText(Message message) throws IOException {
+            System.out.println("Translating " + message.getMsgid() + "...");
+
             Message translatedMessage = cloneMessage(message);
             if (!translatedMessage.isHeader()) {
                 String s = message.getMsgstr();
@@ -225,6 +232,8 @@ public class LlmTranslatorApplication {
                 }
                 translatedMessage.setMsgstr(s);
             }
+
+            System.out.println("Translated " + translatedMessage.getMsgstr());
 
             textWriter.write(translatedMessage);
         }
