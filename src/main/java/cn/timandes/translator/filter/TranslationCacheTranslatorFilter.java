@@ -20,10 +20,10 @@ import cn.timandes.TranslationCacheManager;
 
 import java.io.IOException;
 
-public class TranslationCachTranslatorFilter implements TranslatorFilter {
+public class TranslationCacheTranslatorFilter implements TranslatorFilter {
     private TranslationCacheManager translationCacheManager;
 
-    public TranslationCachTranslatorFilter(TranslationCacheManager translationCacheManager) {
+    public TranslationCacheTranslatorFilter(TranslationCacheManager translationCacheManager) {
         this.translationCacheManager = translationCacheManager;
     }
 

@@ -25,7 +25,7 @@ import cn.timandes.text.TextWriter;
 import cn.timandes.translator.OllamaTranslator;
 import cn.timandes.translator.filter.RemoveBackQuotesTranslatorFilter;
 import cn.timandes.translator.filter.ReturnCharTranslatorFilter;
-import cn.timandes.translator.filter.TranslationCachTranslatorFilter;
+import cn.timandes.translator.filter.TranslationCacheTranslatorFilter;
 import cn.timandes.translator.filter.TranslatorFilter;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.cli.*;
@@ -195,7 +195,7 @@ public class LlmTranslatorApplication {
             this.textReader = textReader;
             this.textWriter = textWriter;
 
-            filterList.add(new TranslationCachTranslatorFilter(new TranslationCacheManager(cacheFilePath)));
+            filterList.add(new TranslationCacheTranslatorFilter(new TranslationCacheManager(cacheFilePath)));
             filterList.add(new RemoveBackQuotesTranslatorFilter());
             filterList.add(new ReturnCharTranslatorFilter());
         }
