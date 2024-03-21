@@ -23,6 +23,8 @@ import cn.timandes.text.PoMessageTextWriter;
 import cn.timandes.text.TextReader;
 import cn.timandes.text.TextWriter;
 import cn.timandes.translator.OllamaTranslator;
+import cn.timandes.translator.RetryTranslatorDecorator;
+import cn.timandes.translator.Translator;
 import cn.timandes.translator.filter.RemoveBackQuotesTranslatorFilter;
 import cn.timandes.translator.filter.ReturnCharTranslatorFilter;
 import cn.timandes.translator.filter.TranslationCacheTranslatorFilter;
@@ -58,6 +60,7 @@ public class LlmTranslatorApplication {
     private static final String PO_FILE_OPT_NAME = "po-file";
     private static final String MODEL_OPT_NAME = "model";
     private static final String LLM_SERVICE_HTTP_HEADER_OPT_NAME = "llm-service-http-header";
+    private static final int DEFAULT_MAX_TRIES = 3;
 
     public static void main(String[] args) throws IOException {
         LlmTranslatorApplication application = new LlmTranslatorApplication();
@@ -111,7 +114,8 @@ public class LlmTranslatorApplication {
         System.out.println("Model: " + model);
 
         String userPromptFormat = DEFAULT_USER_PROMPT_FORMAT;
-        OllamaTranslator translator = new OllamaTranslator(chatClient, model, systemPrompt.getPromptString(), userPromptFormat);
+        OllamaTranslator ollamaTranslator = new OllamaTranslator(chatClient, model, systemPrompt.getPromptString(), userPromptFormat);
+        Translator translator = new RetryTranslatorDecorator(ollamaTranslator, DEFAULT_MAX_TRIES);
 
         // 不同用法
         if (commandLine.hasOption(TEXT_OPT_NAME)) {
@@ -127,7 +131,7 @@ public class LlmTranslatorApplication {
         return new OllamaChatClient(httpMethod, url, httpHeaders, restOperations);
     }
 
-    private static void translateTextNow(CommandLine commandLine, OllamaTranslator translator) {
+    private static void translateTextNow(CommandLine commandLine, Translator translator) {
         String text = commandLine.getOptionValue(TEXT_OPT_NAME);
         System.out.println("Text: " + text);
 
@@ -135,7 +139,7 @@ public class LlmTranslatorApplication {
         System.out.println("Translated: " + tranlated);
     }
 
-    private static void translatePoFile(CommandLine commandLine, OllamaTranslator translator) throws IOException {
+    private static void translatePoFile(CommandLine commandLine, Translator translator) throws IOException {
 
         String srcPoFilePath = commandLine.getOptionValue(PO_FILE_OPT_NAME);
         String destPoFilePath = StringUtils.trimTrailingCharacter(srcPoFilePath, 't');
@@ -188,11 +192,11 @@ public class LlmTranslatorApplication {
 
         private List<TranslatorFilter> filterList = new ArrayList<>(4);
 
-        private cn.timandes.Translator translator;
+        private Translator translator;
 
         private TranslationCacheManager translationCacheManager;
 
-        TranslatePipeline(String cacheFilePath, cn.timandes.Translator translator, TextReader<Message> textReader, TextWriter<Message> textWriter) {
+        TranslatePipeline(String cacheFilePath, Translator translator, TextReader<Message> textReader, TextWriter<Message> textWriter) {
             this.translator = translator;
             this.textReader = textReader;
             this.textWriter = textWriter;

@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package cn.timandes;
+package cn.timandes.translator;
 
 public interface Translator {
     public String translate(String text);

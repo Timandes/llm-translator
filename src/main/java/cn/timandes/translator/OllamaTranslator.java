@@ -16,12 +16,12 @@
 
 package cn.timandes.translator;
 
-import cn.timandes.Translator;
 import cn.timandes.chat.ChatClient;
 import cn.timandes.chat.ChatResponse;
 import cn.timandes.chat.GenericChatRequest;
 import com.azure.ai.openai.models.ChatMessage;
 import com.azure.ai.openai.models.ChatRole;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,11 @@ public class OllamaTranslator implements Translator {
         request.setStream(false);
 
         ChatResponse response = chatClient.chat(request);
-        return response.getChoices().get(0).getMessage().getContent();
+        String retval = response.getChoices().get(0).getMessage().getContent();
+        if (!StringUtils.hasLength(retval)) {
+            throw new TranslationFailedException();
+        }
+        return retval;
     }
 
     private String buildUserPrompt(String s) {
